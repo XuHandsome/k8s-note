@@ -183,30 +183,20 @@ kubectl apply -f /data/calico.yaml
 11. 
 `master`
 ```bash
-sed -n '112,113p' kubernetes-dashboard.yaml
-        #image: k8s.gcr.io/kubernetes-dashboard-amd64:v1.10.1
-        image: gcr.azk8s.cn/google_containers/kubernetes-dashboard-amd64:v1.10.1
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
 
-tail -n 3 kubernetes-dashboard.yaml
-  selector:
-    k8s-app: kubernetes-dashboard
-  type: NodePort
-```
-```bash
-kubectl apply -f kubernetes-dashboard.yaml
-kubectl get pods -n kube-system -l k8s-app=kubernetes-dashboard
-NAME                                   READY   STATUS    RESTARTS   AGE
-kubernetes-dashboard-7c9964c47-6mhw5   1/1     Running   0          106s
-```
+#更改type: ClusterIP为type: NodePort
+kubectl --namespace=kubernetes-dashboard edit service kubernetes-dashboard
 
-访问dashboard
-[service](https://10.222.8.1:32039)
-```bash
-kubectl get svc -n kube-system|grep dashboard
-kubernetes-dashboard   NodePort    10.96.238.47   <none>        443:32039/TCP            8m54s
-```
+# 查看端口号
+kubectl --namespace=kubernetes-dashboard get service kubernetes-dashboard
 
-[proxy](http://10.222.8.1:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login)
-```bash
-nohup kubectl proxy --address=10.222.8.1 --disable-filter=true &
+# 用户
+kubectl create -f /data/dashboard/admin-user.yaml
+
+#绑定权限
+kubectl create -f /data/dashboard/admin-user-role-binding.yaml
+
+# 获取token
+kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
 ```
